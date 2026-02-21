@@ -1,0 +1,26 @@
+inventory = {
+    "вишня": 5,
+    "морква": 6,
+    "цибуля": 8,
+    "часник": 5,
+    "молоко": 10
+}
+def update_inventory(product, quantity):
+    if product in inventory:
+        inventory[product] += quantity
+    else:
+        inventory[product] = quantity
+
+    if inventory[product] <= 0:
+        print(f"Товар '{product}' закінчився або відсутній")
+update_inventory("вишня", 4)
+update_inventory("молоко", 9)
+update_inventory("морква", 5)
+update_inventory("часник", 4)
+print("Поточний склад:")
+for item, count in inventory.items():
+    print(item, ":", count)
+    print("\nТовари, яких менше 5:")
+    for item, count in inventory.items():
+        if count < 5:
+            print(item)
