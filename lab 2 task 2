@@ -1,0 +1,81 @@
+import hashlib
+from pathlib import Path
+
+
+def build_sha256_registry(*paths: str) -> dict:
+    """
+    Обчислює SHA-256 для кожного переданого файлу.
+    Повертає словник {шлях: хеш}.
+    """
+
+    registry = {}
+
+    for file_name in paths:
+        file_path = Path(file_name)
+
+        try:
+            if not file_path.exists():
+                raise FileNotFoundError
+
+            digest = hashlib.new("sha256")
+
+            with file_path.open("rb") as binary_file:
+                while True:
+                    chunk = binary_file.read(8192)
+                    if not chunk:
+                        break
+                    digest.update(chunk)
+
+            registry[str(file_path)] = digest.hexdigest()
+
+        except FileNotFoundError:
+            print(f"[ПОМИЛКА] Файл '{file_name}' відсутній.")
+        except OSError as err:
+            print(f"[ПОМИЛКА ДОСТУПУ] {file_name}: {err}")
+        except Exception as unexpected:
+            print(f"[НЕПЕРЕДБАЧЕНА ПОМИЛКА] {file_name}: {unexpected}")
+
+    return registry
+
+
+def create_sample_documents() -> list:
+    """
+    Створює тестові файли для демонстрації.
+    """
+
+    sample_content = {
+        "demo_a.txt": "Data for hashing example A.",
+        "demo_b.txt": "Another example content for SHA256."
+    }
+
+    created = []
+
+    for filename, text in sample_content.items():
+        path_obj = Path(filename)
+        path_obj.write_text(text, encoding="utf-8")
+        created.append(filename)
+
+    return created
+
+
+if __name__ == "__main__":
+
+    print("=== Генерація тестових файлів ===")
+    generated_files = create_sample_documents()
+
+    files_for_processing = generated_files + ["missing_document.txt"]
+
+    print("\n=== Обчислення SHA-256 ===")
+    hash_results = build_sha256_registry(*files_for_processing)
+
+    print("\n=== Отримані хеші ===")
+    for file_ref, hash_value in hash_results.items():
+        print(f"{file_ref}")
+        print(f"SHA-256 → {hash_value}")
+        print("=" * 30)
+
+    # Очищення тестових файлів
+    for file_name in generated_files:
+        path_to_remove = Path(file_name)
+        if path_to_remove.exists():
+            path_to_remove.unlink()
