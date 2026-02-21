@@ -1,0 +1,82 @@
+from collections import Counter
+from pathlib import Path
+
+
+def parse_http_log(path_to_log: str) -> dict:
+    """
+    Аналізує лог-файл HTTP-сервера та повертає словник
+    з кількістю входжень кожного статус-коду.
+    """
+
+    status_statistic = Counter()
+
+    try:
+        log_path = Path(path_to_log)
+
+        with log_path.open(mode="r", encoding="utf-8") as log_file:
+            for row in log_file:
+                row = row.rstrip()
+
+                if not row:
+                    continue
+
+                columns = row.split()
+
+                # У стандартному Apache-лозі код відповіді йде після HTTP/версії
+                # Зазвичай це третій елемент з кінця
+                if len(columns) >= 3:
+                    possible_code = columns[-2]
+
+                    if possible_code.isdigit():
+                        status_statistic[possible_code] += 1
+
+    except FileNotFoundError:
+        print(f"[ПОМИЛКА] Файл '{path_to_log}' не існує.")
+        return {}
+    except OSError as err:
+        print(f"[ПОМИЛКА ЧИТАННЯ] {err}")
+        return {}
+    except Exception as unexpected:
+        print(f"[НЕПЕРЕДБАЧЕНА ПОМИЛКА] {unexpected}")
+        return {}
+
+    return dict(status_statistic)
+
+
+def generate_test_log(file_name: str) -> None:
+    """
+    Створює демонстраційний лог-файл для перевірки роботи функції.
+    """
+
+    demo_data = [
+        '127.0.0.1 - - [21/Jan/2024:10:00:01 +0200] "GET /home HTTP/1.1" 200 512',
+        '127.0.0.1 - - [21/Jan/2024:10:00:02 +0200] "POST /auth HTTP/1.1" 401 256',
+        '192.168.1.10 - - [21/Jan/2024:10:00:03 +0200] "GET /dashboard HTTP/1.1" 200 1024',
+        '10.0.0.2 - - [21/Jan/2024:10:00:04 +0200] "GET /settings HTTP/1.1" 403 333',
+        '10.0.0.3 - - [21/Jan/2024:10:00:05 +0200] "GET /stats HTTP/1.1" 500 2048',
+        '192.168.1.15 - - [21/Jan/2024:10:00:06 +0200] "GET /profile HTTP/1.1" 200 777',
+        '127.0.0.1 - - [21/Jan/2024:10:00:07 +0200] "GET /logout HTTP/1.1" 404 128'
+    ]
+
+    with open(file_name, "w", encoding="utf-8") as f:
+        f.write("\n".join(demo_data))
+
+    print(f"Тестовий лог-файл '{file_name}' створено успішно.")
+
+
+if __name__ == "__main__":
+    test_log = "server_activity.log"
+
+    generate_test_log(test_log)
+
+    print("\n=== АНАЛІЗ ЛОГУ ===")
+    statistics = parse_http_log(test_log)
+
+    if statistics:
+        for status, amount in sorted(statistics.items()):
+            print(f"HTTP {status} → {amount} запит(ів)")
+    else:
+        print("Статистику отримати не вдалося.")
+
+    print("\n=== ПЕРЕВІРКА ОБРОБКИ ПОМИЛКИ ===")
+    parse_http_log("missing_file.log")
