@@ -1,0 +1,88 @@
+def main():
+
+    # Початкові дані (оновлений асортимент)
+    sales_data = [
+        {"товар": "iphone 17 pro max 256gb", "кількість": 1, "ціна": 65000},
+        {"товар": "airpods 3", "кількість": 5, "ціна": 7500},
+        {"товар": "iphone 17 pro max 512gb", "кількість": 2, "ціна": 72000},
+        {"товар": "airpods pro 2", "кількість": 3, "ціна": 9500},
+    ]
+
+    # Функція підрахунку доходу
+    def generate_income_report(data):
+        report = {}
+
+        for item in data:
+            name = item["товар"]
+            total_income = item["кількість"] * item["ціна"]
+
+            report[name] = report.get(name, 0) + total_income
+
+        return report
+
+    while True:
+        print("\n=== АНАЛІТИКА ПРОДАЖІВ APPLE STORE ===")
+        print("1 - Додати продаж")
+        print("2 - Переглянути всі продажі")
+        print("3 - Показати дохід по кожному товару")
+        print("4 - Показати ТОП товари (дохід > 20000)")
+        print("5 - Завершити програму")
+
+        user_choice = input("Оберіть пункт меню: ")
+
+        if user_choice == "1":
+            try:
+                product_name = input("Назва товару: ").strip().lower()
+                quantity = int(input("Кількість: "))
+                price = float(input("Ціна за одиницю: "))
+
+                sale_record = {
+                    "товар": product_name,
+                    "кількість": quantity,
+                    "ціна": price
+                }
+
+                sales_data.append(sale_record)
+                print("✅ Продаж додано успішно.")
+
+            except ValueError:
+                print("❌ Помилка: введіть правильні числові значення.")
+
+        elif user_choice == "2":
+            print("\n--- Повний список продажів ---")
+            for index, sale in enumerate(sales_data, start=1):
+                print(f"{index}) {sale['товар']} — {sale['кількість']} шт. × {sale['ціна']} грн")
+
+        elif user_choice == "3":
+            income_report = generate_income_report(sales_data)
+            print("\n--- Дохід по товарах ---")
+            for product, income in income_report.items():
+                print(f"{product.title()} : {income} грн")
+
+        elif user_choice == "4":
+            income_report = generate_income_report(sales_data)
+
+            # Сортуємо по доходу
+            top_products = sorted(
+                [(prod, total) for prod, total in income_report.items() if total > 20000],
+                key=lambda x: x[1],
+                reverse=True
+            )
+
+            print("\n--- ТОП продажі ---")
+            if top_products:
+                for prod, total in top_products:
+                    print(f"{prod.title()} — {total} грн")
+            else:
+                print("Немає товарів з таким доходом.")
+
+        elif user_choice == "5":
+            print("Програму завершено.")
+            break
+
+        else:
+            print("Невірний пункт меню. Спробуйте ще раз.")
+
+
+if __name__ == "__main__":
+    main()
