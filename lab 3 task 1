@@ -1,0 +1,144 @@
+import sqlite3
+import hashlib
+
+
+DATABASE_NAME = "users.db"
+
+
+# ---------------------------
+# Хешування пароля
+# ---------------------------
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+
+# ---------------------------
+# Створення БД та таблиці
+# ---------------------------
+def create_database():
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            login TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            full_name TEXT NOT NULL
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+# ---------------------------
+# Додавання нового користувача
+# ---------------------------
+def add_user():
+    login = input("Введіть логін: ")
+    password = input("Введіть пароль: ")
+    full_name = input("Введіть повне ПІБ: ")
+
+    hashed_password = hash_password(password)
+
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            INSERT INTO users (login, password, full_name)
+            VALUES (?, ?, ?)
+        """, (login, hashed_password, full_name))
+
+        conn.commit()
+        print("Користувача успішно додано.")
+    except sqlite3.IntegrityError:
+        print("Користувач з таким логіном вже існує.")
+
+    conn.close()
+
+
+# ---------------------------
+# Оновлення паролю користувача
+# ---------------------------
+def update_password():
+    login = input("Введіть логін користувача: ")
+    new_password = input("Введіть новий пароль: ")
+
+    hashed_password = hash_password(new_password)
+
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users
+        SET password = ?
+        WHERE login = ?
+    """, (hashed_password, login))
+
+    if cursor.rowcount == 0:
+        print("Користувача не знайдено.")
+    else:
+        conn.commit()
+        print("Пароль успішно оновлено.")
+
+    conn.close()
+
+
+# ---------------------------
+# Перевірка автентифікації
+# ---------------------------
+def authenticate_user():
+    login = input("Введіть логін: ")
+    password = input("Введіть пароль: ")
+
+    hashed_password = hash_password(password)
+
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT * FROM users
+        WHERE login = ? AND password = ?
+    """, (login, hashed_password))
+
+    user = cursor.fetchone()
+    conn.close()
+
+    if user:
+        print("Автентифікація успішна.")
+    else:
+        print("Невірний логін або пароль.")
+
+
+# ---------------------------
+# Меню програми
+# ---------------------------
+def main():
+    create_database()
+
+    while True:
+        print("\n--- МЕНЮ ---")
+        print("1. Додати користувача")
+        print("2. Оновити пароль")
+        print("3. Автентифікація")
+        print("4. Вихід")
+
+        choice = input("Оберіть дію (1-4): ")
+
+        if choice == "1":
+            add_user()
+        elif choice == "2":
+            update_password()
+        elif choice == "3":
+            authenticate_user()
+        elif choice == "4":
+            print("Завершення роботи.")
+            break
+        else:
+            print("Невірний вибір.")
+
+
+if __name__ == "__main__":
+    main()
